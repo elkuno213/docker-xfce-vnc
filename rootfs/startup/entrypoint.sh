@@ -3,21 +3,26 @@ set -e
 
 # Validate and set environment variables with defaults.
 validate_and_set_env() {
-  # Check if VNC_PASSWORD is set.
-  if [[ -z "$VNC_PASSWORD" ]]; then
-    echo "Error: VNC_PASSWORD is not set. Please provide it as an environment variable."
+  # Check if PASSWORD is set.
+  if [[ -z "$PASSWORD" ]]; then
+    echo "Error: PASSWORD is not set. Please provide it as an environment variable."
     exit 1
   fi
 
   # Set default values for environment variables if not provided.
   export DISPLAY=${DISPLAY:-:1}
-  export VNC_PORT=${VNC_PORT:-5901}
   export NOVNC_PORT=${NOVNC_PORT:-6901}
+  export SSH_PORT=${SSH_PORT:-2222}
 
   # Log the values being used.
   echo "Using DISPLAY: $DISPLAY"
-  echo "Using VNC_PORT: $VNC_PORT"
   echo "Using NOVNC_PORT: $NOVNC_PORT"
+  echo "Using SSH_PORT: $SSH_PORT"
+}
+
+# Configure SSH password.
+configure_ssh_password() {
+  echo "root:$PASSWORD" | chpasswd
 }
 
 # Configure VNC password.
@@ -34,7 +39,7 @@ configure_vnc_password() {
     echo "$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 20)" | vncpasswd -f >$passwd_path
   fi
 
-  echo "$VNC_PASSWORD" | vncpasswd -f >>$passwd_path
+  echo "$PASSWORD" | vncpasswd -f >>$passwd_path
   chmod 600 $passwd_path
 }
 
@@ -44,7 +49,7 @@ configure_xstartup() {
   local xstartup_path="$HOME/.vnc/xstartup"
 
   if [[ ! -f $xstartup_path ]]; then
-    cat > $xstartup_path << 'EOF'
+    cat >$xstartup_path <<'EOF'
 #!/bin/sh
 # Start up the standard system desktop
 unset SESSION_MANAGER
@@ -58,7 +63,7 @@ EOF
 # Generate Supervisor Configurations.
 generate_supervisor_configs() {
   # Supervisor configuration
-  cat > /etc/supervisor/supervisord.conf <<EOF
+  cat >/etc/supervisor/supervisord.conf <<EOF
 [supervisord]
 nodaemon=true
 logfile=/var/log/supervisor/supervisord.log
@@ -96,22 +101,24 @@ EOF
 
 # Main execution.
 main() {
+  echo -e "\n============================================================"
+  echo "Validating Environment Variables"
+  echo "============================================================"
   validate_and_set_env
 
   echo -e "\n============================================================"
-  echo "Starting VNC and noVNC Setup"
-
-  echo -e "\nStep 1: Configuring VNC Password"
-  configure_vnc_password
-
-  echo -e "\nStep 2: Configuring xstartup file"
-  configure_xstartup
-
-  echo -e "\nStep 3: Generating Supervisor Configurations"
-  generate_supervisor_configs
-
-  echo -e "\nStep 4: Starting Supervisor"
+  echo "Starting SSH Setup"
   echo "============================================================"
+  echo "Restarting SSH service..."
+  service ssh restart
+  configure_ssh_password
+
+  echo -e "\n============================================================"
+  echo "Starting Supervisor"
+  echo "============================================================"
+  configure_vnc_password
+  configure_xstartup
+  generate_supervisor_configs
   exec /usr/bin/supervisord -n -c /etc/supervisor/supervisord.conf
 }
 

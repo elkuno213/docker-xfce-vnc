@@ -30,12 +30,13 @@ Run the container with the following command:
 docker container run         \
   -it                        \
   --rm                       \
-  -e VNC_PASSWORD=<password> \
+  -e PASSWORD=<password>     \
   -e DISPLAY=:1              \
   -e VNC_PORT=5901           \
   -e NOVNC_PORT=6901         \
   -p 5901:5901               \
   -p 6901:6901               \
+  -p 2222:22                 \
   <image>
 ```
 

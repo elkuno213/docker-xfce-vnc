@@ -33,7 +33,17 @@ RUN    apt-get update                             \
         apt-utils                                 \
     && rm -rf /var/lib/apt/lists/*
 
-FROM base AS xfce
+FROM base AS ssh
+RUN    apt-get update                             \
+    && apt-get install -y --no-install-recommends \
+        openssh-server                            \
+        vim                                       \
+    && mkdir -p /var/run/sshd                     \
+    && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config \
+    && sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config \
+    && rm -rf /var/lib/apt/lists/*
+
+FROM ssh AS xfce
 RUN    apt-get update                             \
     && apt-get install -y --no-install-recommends \
         xfce4                                     \
@@ -76,11 +86,9 @@ RUN for var in ${STARTUP_DIR}; do                                               
       chgrp -R 0 "$var" && chmod -R a+rw "$var" && find "$var" -type d -exec chmod a+x {} +; \
     done
 
-EXPOSE $VNC_PORT $NOVNC_PORT
+EXPOSE 22 $VNC_PORT $NOVNC_PORT
 
 ENTRYPOINT ["sh", "-c", "$STARTUP_DIR/entrypoint.sh"]
-CMD ["--wait"]
 
 # TODO: Parameterize the architecture version (e.g., jammy, focal, etc.)
 # TODO: Parameterize the base image (e.g., ubuntu, debian, alpine, etc.)
-# TODO: add ssh server
