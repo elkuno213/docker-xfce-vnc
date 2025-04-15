@@ -42,8 +42,8 @@ RUN    mkdir -p /isaac-sim /isaac-sim-comp-check /tmp \
     && wget --no-check-certificate -P /tmp https://download.isaacsim.omniverse.nvidia.com/isaac-sim-comp-check%404.5.0-rc.6%2Brelease.675.f1cca148.gl.linux-x86_64.release.zip    \
     && unzip "/tmp/isaac-sim-standalone@4.5.0-rc.36+release.19112.f59b3005.gl.linux-x86_64.release.zip" -d /isaac-sim            \
     && unzip "/tmp/isaac-sim-comp-check@4.5.0-rc.6+release.675.f1cca148.gl.linux-x86_64.release.zip"    -d /isaac-sim-comp-check \
-    && cd /isaac-sim \
-    && ./post_install.sh
+    && /isaac-sim/post_install.sh                     \
+    && rm -rf /tmp/isaac-sim-*
 
 RUN    apt-get update                                                        \
     && apt-get install -y --no-install-recommends software-properties-common \
