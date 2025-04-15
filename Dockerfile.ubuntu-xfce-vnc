@@ -14,11 +14,12 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Set the locale.
 RUN    apt-get update                                     \
     && apt-get install -y --no-install-recommends locales \
-    && echo "LC_ALL=en_US.UTF-8" >> /etc/environment      \
+    && rm -rf /var/lib/apt/lists/*                        \
     && echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen        \
-    && echo "LANG=en_US.UTF-8" > /etc/locale.conf         \
-    && locale-gen en_US.UTF-8                             \
-    && rm -rf /var/lib/apt/lists/*
+    && locale-gen en_US.UTF-8
+ENV LANG=en_US.UTF-8  \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
 
 # Install common tools.
 RUN    apt-get update                             \
