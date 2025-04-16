@@ -76,7 +76,14 @@ RUN    apt-get update \
     && apt-get install -y --no-install-recommends supervisor \
     && rm -rf /var/lib/apt/lists/*
 
-FROM supervisor AS final
+FROM supervisor AS isaac-sim-comp-check
+
+RUN    mkdir -p /isaac-sim-comp-check /tmp \
+    && wget --no-check-certificate -P /tmp https://download.isaacsim.omniverse.nvidia.com/isaac-sim-comp-check%404.5.0-rc.6%2Brelease.675.f1cca148.gl.linux-x86_64.release.zip \
+    && unzip "/tmp/isaac-sim-comp-check@4.5.0-rc.6+release.675.f1cca148.gl.linux-x86_64.release.zip" -d /isaac-sim-comp-check \
+    && rm -rf /tmp/isaac-sim-comp-check
+
+FROM isaac-sim-comp-check AS final
 
 # Add config/script files into the image.
 ADD ./rootfs/ /
@@ -89,7 +96,7 @@ RUN for var in ${STARTUP_DIR}; do                                               
 
 EXPOSE 22 $VNC_PORT $NOVNC_PORT
 
-ENTRYPOINT ["sh", "-c", "$STARTUP_DIR/entrypoint.sh"]
+ENTRYPOINT ["sh", "-c", "$STARTUP_DIR/entrypoint.isaac-sim.sh"]
 
 # TODO: Parameterize the architecture version (e.g., jammy, focal, etc.)
 # TODO: Parameterize the base image (e.g., ubuntu, debian, alpine, etc.)
